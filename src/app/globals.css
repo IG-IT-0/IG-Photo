@@ -1,0 +1,67 @@
+@import "tailwindcss";
+
+:root {
+  --ig-forest: #0f3b2e;
+  --ig-emerald: #1b8b64;
+  --ig-mint: #d3f0df;
+  --ig-gold: #dfc175;
+  --ig-cream: #f7f3e9;
+  --ig-ink: #0a1a14;
+  --ig-card: rgba(255, 255, 255, 0.04);
+  --ig-border: rgba(255, 255, 255, 0.08);
+}
+
+@theme inline {
+  --color-ig-forest: var(--ig-forest);
+  --color-ig-emerald: var(--ig-emerald);
+  --color-ig-gold: var(--ig-gold);
+  --color-ig-cream: var(--ig-cream);
+  --color-ig-ink: var(--ig-ink);
+  --color-ig-card: var(--ig-card);
+  --color-ig-border: var(--ig-border);
+  --font-sans: var(--font-body);
+  --font-display: var(--font-heading);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-body), system-ui, -apple-system, sans-serif;
+}
+
+.card {
+  background: var(--ig-card);
+  border: 1px solid var(--ig-border);
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(12px);
+}
+
+.badge {
+  border-radius: 9999px;
+  padding: 2px 10px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  font-size: 12px;
+}
+
+.input {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--ig-border);
+  color: var(--ig-cream);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 15px;
+  width: 100%;
+}
+
+.input::placeholder {
+  color: rgba(247, 243, 233, 0.74);
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
