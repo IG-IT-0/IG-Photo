@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, Suspense, useState } from "react";
 
-export default function StaffLoginPage() {
+function PageContent() {
   const router = useRouter();
   const params = useSearchParams();
   const [password, setPassword] = useState("");
@@ -76,5 +76,19 @@ export default function StaffLoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function StaffLoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center text-ig-cream">
+          Loading...
+        </div>
+      }
+    >
+      <PageContent />
+    </Suspense>
   );
 }

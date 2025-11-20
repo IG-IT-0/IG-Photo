@@ -1,7 +1,7 @@
 {
   "functions": {
     "source": "functions",
-    "runtime": "nodejs18"
+    "runtime": "nodejs20"
   },
   "firestore": {
     "rules": "firestore.rules",
@@ -9,6 +9,20 @@
   },
   "storage": {
     "rules": "storage.rules"
+  },
+  "hosting": [
+    {
+      "site": "ig-photo-2025-christmas",
+      "source": ".",
+      "frameworksBackend": {
+        "region": "us-central1"
+      }
+    }
+  ],
+  "frameworks": {
+    "nextjs": {
+      "configFile": "next.config.ts"
+    }
   },
   "emulators": {
     "functions": {

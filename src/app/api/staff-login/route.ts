@@ -1,6 +1,3 @@
-"use server";
-
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 const COOKIE_NAME = "staff_auth";
@@ -22,7 +19,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid password." }, { status: 401 });
   }
 
-  cookies().set({
+  const res = NextResponse.json({ ok: true });
+  res.cookies.set({
     name: COOKIE_NAME,
     value: "1",
     httpOnly: true,
@@ -32,10 +30,11 @@ export async function POST(req: Request) {
     maxAge: COOKIE_MAX_AGE,
   });
 
-  return NextResponse.json({ ok: true });
+  return res;
 }
 
 export async function DELETE() {
-  cookies().delete(COOKIE_NAME);
-  return NextResponse.json({ ok: true });
+  const res = NextResponse.json({ ok: true });
+  res.cookies.delete(COOKIE_NAME);
+  return res;
 }

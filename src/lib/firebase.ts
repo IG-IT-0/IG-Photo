@@ -3,7 +3,6 @@ import {
   connectFirestoreEmulator,
   initializeFirestore,
   persistentLocalCache,
-  persistentSingleTabManager,
 } from "firebase/firestore";
 import { connectStorageEmulator, getStorage } from "firebase/storage";
 
@@ -23,9 +22,7 @@ const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
  * screen can continue to enqueue writes while offline/spotty Wi‑Fi.
  */
 const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    tabManager: persistentSingleTabManager(),
-  }),
+  localCache: persistentLocalCache(),
 });
 
 const storage = getStorage(app);
