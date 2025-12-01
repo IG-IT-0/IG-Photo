@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { deriveStaffCookieValue } from "@/lib/staffAuth";
 
 const COOKIE_NAME = "staff_auth";
 const COOKIE_MAX_AGE = 60 * 60 * 12; // 12 hours
@@ -19,10 +20,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid password." }, { status: 401 });
   }
 
+  const cookieValue = await deriveStaffCookieValue(secret);
   const res = NextResponse.json({ ok: true });
   res.cookies.set({
     name: COOKIE_NAME,
-    value: "1",
+    value: cookieValue,
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
