@@ -32,15 +32,29 @@ const smsClient =
     ? twilio(twilioSid, twilioToken)
     : null;
 
+function normalizePhone(raw: string): string | null {
+  const digits = raw.replace(/\D/g, "");
+  if (raw.trim().startsWith("+")) return `+${digits.replace(/^0+/, "")}`;
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith("1")) return `+${digits}`;
+  return null;
+}
+
 async function sendSms(to: string, body: string) {
   if (!smsClient || !twilioFrom) {
     functions.logger.warn("Twilio not configured; skipping SMS", { to, body });
     return;
   }
 
+  const formatted = normalizePhone(to);
+  if (!formatted) {
+    functions.logger.error("Invalid phone for SMS, skipping", { to, body });
+    return;
+  }
+
   await smsClient.messages.create({
     from: twilioFrom,
-    to,
+    to: formatted,
     body,
   });
 }
@@ -93,13 +107,27 @@ export const onServingChange = functions.firestore
           `You're up soon! Please start heading over. You are about 5 groups away. Ticket #${ticket.ticketNumber}`,
         ),
       );
-      await warmupDoc.ref.set(
-        { status: "notification_sent" satisfies TicketStatus },
-        { merge: true },
-      );
-    }
+    await warmupDoc.ref.set(
+      { status: "notification_sent" satisfies TicketStatus },
+      { merge: true },
+    );
+  }
 
-    await Promise.all(smsTasks);
+  await Promise.all(smsTasks);
+  });
+
+export const onTicketCreated = functions.firestore
+  .document("queue/{ticketId}")
+  .onCreate(async (snap) => {
+    const ticket = snap.data() as QueueTicket | undefined;
+    if (!ticket?.phoneNumber || !ticket.ticketNumber) return;
+
+    const msg = [
+      `You’re in line for Inner Garden photos! Ticket #${ticket.ticketNumber}.`,
+      "We’ll text when you’re close, when it’s your turn, and when photos are ready.",
+    ].join(" ");
+
+    await sendSms(ticket.phoneNumber, msg);
   });
 
 export const onPhotosUploaded = functions.firestore

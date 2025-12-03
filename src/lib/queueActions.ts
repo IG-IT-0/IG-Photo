@@ -19,8 +19,23 @@ export type TicketInput = Omit<
   "ticketNumber" | "status" | "timestamp" | "photoUrls"
 >;
 
+function formatPhoneNumber(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  if (raw.trim().startsWith("+")) {
+    // Preserve explicit country code, assume user provided a valid E.164-ish number.
+    return `+${digits.replace(/^0+/, "")}`;
+  }
+  if (digits.length === 10) {
+    return `+1${digits}`;
+  }
+  if (digits.length === 11 && digits.startsWith("1")) {
+    return `+${digits}`;
+  }
+  throw new Error("Please enter a 10-digit mobile number (e.g. 555-555-1212).");
+}
+
 export async function createTicket(input: TicketInput) {
-  const sanitizedPhone = input.phoneNumber.replace(/[^\d+]/g, "");
+  const sanitizedPhone = formatPhoneNumber(input.phoneNumber);
 
   return runTransaction(db, async (tx) => {
     const settingsSnap = await tx.get(settingsRef);

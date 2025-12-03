@@ -15,7 +15,8 @@
       "site": "ig-photo-2025-christmas",
       "source": ".",
       "frameworksBackend": {
-        "region": "us-central1"
+        "region": "us-central1",
+        "invoker": "public"
       }
     }
   ],
