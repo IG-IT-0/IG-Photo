@@ -14,8 +14,12 @@ export async function middleware(req: NextRequest) {
   if (!shouldProtect) return NextResponse.next();
 
   const staffPass = process.env.STAFF_PASS;
-  if (staffPass) {
-    const expectedCookie = await deriveStaffCookieValue(staffPass);
+  const precomputedHash =
+    process.env.NEXT_PUBLIC_STAFF_HASH ?? process.env.STAFF_COOKIE_HASH;
+
+  if (staffPass || precomputedHash) {
+    const expectedCookie =
+      precomputedHash ?? (await deriveStaffCookieValue(staffPass as string));
     const authed = req.cookies.get("staff_auth")?.value === expectedCookie;
     if (authed) return NextResponse.next();
   }
