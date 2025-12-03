@@ -162,12 +162,14 @@ export default function Home() {
           <div className="flex flex-wrap gap-3 text-sm font-semibold text-ig-cream/80">
             <Link
               href="/photographer"
+              prefetch={false}
               className="rounded-full border border-ig-gold/50 px-4 py-2 transition hover:scale-[1.01] hover:border-ig-gold hover:text-ig-gold"
             >
               Photographer view
             </Link>
             <Link
               href="/assistant"
+              prefetch={false}
               className="rounded-full border border-white/20 px-4 py-2 transition hover:scale-[1.01] hover:border-ig-gold hover:text-ig-gold"
             >
               Assistant uploader

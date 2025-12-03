@@ -16,20 +16,35 @@ function PageContent() {
     e.preventDefault();
     setError(null);
     setLoading(true);
+    console.log("[staff-login] submit", {
+      next,
+      passwordLength: password.length,
+    });
     try {
       const res = await fetch("/api/staff-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ password }),
+      });
+      console.log("[staff-login] response", {
+        ok: res.ok,
+        status: res.status,
+        statusText: res.statusText,
+        setCookie: res.headers.get("set-cookie"),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
+        console.log("[staff-login] error body", body);
         throw new Error(body?.error || "Invalid password");
       }
+      console.log("[staff-login] navigating to next", next);
       router.push(next);
     } catch (err) {
+      console.error("[staff-login] login failed", err);
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
+      console.log("[staff-login] done");
       setLoading(false);
     }
   };

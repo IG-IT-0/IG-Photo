@@ -2,6 +2,7 @@ import { getApp, getApps, initializeApp } from "firebase/app";
 import {
   connectFirestoreEmulator,
   initializeFirestore,
+  persistentMultipleTabManager,
   persistentLocalCache,
 } from "firebase/firestore";
 import { connectStorageEmulator, getStorage } from "firebase/storage";
@@ -22,7 +23,11 @@ const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
  * screen can continue to enqueue writes while offline/spotty Wi‑Fi.
  */
 const db = initializeFirestore(app, {
-  localCache: persistentLocalCache(),
+  // Enable multi-tab persistence so staff can open multiple consoles without
+  // fighting for the persistence owner tab.
+  localCache: persistentLocalCache({
+    tabManager: persistentMultipleTabManager(),
+  }),
 });
 
 const storage = getStorage(app);
