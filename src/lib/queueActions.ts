@@ -82,6 +82,8 @@ export async function advanceQueue() {
     const nextTicket = (settings.currentServingTicket ?? 0) + 1;
     const nextTicketRef = doc(queueCollection, String(nextTicket));
     const nextTicketSnap = await tx.get(nextTicketRef);
+    const warmupRef = doc(queueCollection, String(nextTicket + 5));
+    const warmupSnap = await tx.get(warmupRef);
 
     if (!nextTicketSnap.exists()) {
       throw new Error("No more families in line yet. Wait for new sign ups.");
@@ -91,10 +93,8 @@ export async function advanceQueue() {
       status: "current" as TicketStatus,
     });
 
-    // Notify the group ~5 spots away so they can start heading over.
-    const warmupRef = doc(queueCollection, String(nextTicket + 5));
-    const warmupSnap = await tx.get(warmupRef);
     if (warmupSnap.exists()) {
+      // Notify the group ~5 spots away so they can start heading over.
       tx.update(warmupRef, {
         status: "notification_sent" as TicketStatus,
       });
