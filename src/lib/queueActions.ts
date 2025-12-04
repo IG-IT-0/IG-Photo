@@ -13,10 +13,17 @@ import type { QueueSettings, QueueTicket, TicketStatus } from "./types";
 
 const settingsRef = doc(collection(db, "settings"), "queue");
 const queueCollection = collection(db, "queue");
+const phoneIndexCollection = collection(db, "phoneNumbers");
 
 export type TicketInput = Omit<
   QueueTicket,
-  "ticketNumber" | "status" | "timestamp" | "photoUrls"
+  | "ticketNumber"
+  | "status"
+  | "timestamp"
+  | "photoUrls"
+  | "estimatedMinutesAtSignup"
+  | "completedAt"
+  | "deliveredAt"
 >;
 
 function formatPhoneNumber(raw: string): string {
@@ -36,6 +43,7 @@ function formatPhoneNumber(raw: string): string {
 
 export async function createTicket(input: TicketInput) {
   const sanitizedPhone = formatPhoneNumber(input.phoneNumber);
+  const phoneIndexRef = doc(phoneIndexCollection, sanitizedPhone);
 
   return runTransaction(db, async (tx) => {
     const settingsSnap = await tx.get(settingsRef);
@@ -44,9 +52,37 @@ export async function createTicket(input: TicketInput) {
         ? settingsSnap.data()
         : { currentServingTicket: 0, lastTicketNumber: 0 }
     ) as QueueSettings;
+    const currentServing = settings.currentServingTicket ?? 0;
+
+    const existingPhoneSnap = await tx.get(phoneIndexRef);
+    if (existingPhoneSnap.exists()) {
+      const existingTicketNumber = existingPhoneSnap.data()?.ticketNumber as
+        | number
+        | undefined;
+      if (existingTicketNumber) {
+        const existingTicketRef = doc(
+          queueCollection,
+          String(existingTicketNumber),
+        );
+        const existingTicketSnap = await tx.get(existingTicketRef);
+        if (existingTicketSnap.exists()) {
+          const existingTicket = existingTicketSnap.data() as QueueTicket;
+          const alreadyServed = currentServing > existingTicket.ticketNumber;
+          const fullyUploaded = existingTicket.status === "photos_uploaded";
+          if (!alreadyServed && !fullyUploaded) {
+            throw new Error(
+              `This mobile number is already queued as ticket #${existingTicket.ticketNumber}. If you need to make a change, ask a staff member to edit your info.`,
+            );
+          }
+        }
+      }
+    }
 
     const nextTicket = (settings.lastTicketNumber ?? 0) + 1;
     const ticketRef = doc(queueCollection, String(nextTicket));
+    const estimatedMinutesAtSignup =
+      Math.max(nextTicket - (settings.currentServingTicket ?? 0), 0) *
+      AVERAGE_MINUTES_PER_TICKET;
 
     tx.set(ticketRef, {
       ...input,
@@ -54,6 +90,7 @@ export async function createTicket(input: TicketInput) {
       ticketNumber: nextTicket,
       status: "waiting" as TicketStatus,
       timestamp: serverTimestamp(),
+      estimatedMinutesAtSignup,
     });
 
     tx.set(
@@ -65,6 +102,11 @@ export async function createTicket(input: TicketInput) {
       },
       { merge: true },
     );
+
+    tx.set(phoneIndexRef, {
+      ticketNumber: nextTicket,
+      createdAt: serverTimestamp(),
+    });
 
     return nextTicket;
   });

@@ -16,6 +16,9 @@ export type QueueTicket = {
   status: TicketStatus;
   timestamp?: Timestamp;
   photoUrls?: string[];
+  estimatedMinutesAtSignup?: number;
+  completedAt?: Timestamp;
+  deliveredAt?: Timestamp;
 };
 
 export type QueueSettings = {

@@ -17,6 +17,7 @@ type QueueTicket = {
   phoneNumber: string;
   status: TicketStatus;
   photoUrls?: string[];
+  estimatedMinutesAtSignup?: number;
 };
 
 const app = admin.apps.length ? admin.app() : admin.initializeApp();
@@ -90,7 +91,7 @@ export const onServingChange = functions.firestore
       smsTasks.push(
         sendSms(
           ticket.phoneNumber,
-          `It is your turn! Please head to the Inner Garden photo area. Ticket #${ticket.ticketNumber}`,
+          `Ho ho ho! It's photo time with Santa! Please bring your little one to the photo spot now. Ticket #${ticket.ticketNumber} 🎅🧒📸`,
         ),
       );
       await currentDoc.ref.set(
@@ -104,16 +105,16 @@ export const onServingChange = functions.firestore
       smsTasks.push(
         sendSms(
           ticket.phoneNumber,
-          `You're up soon! Please start heading over. You are about 5 groups away. Ticket #${ticket.ticketNumber}`,
+          `Jingle jingle! Santa photos coming up soon. You're about 5 families away - please get your kiddo ready. Ticket #${ticket.ticketNumber} ⏳🎅✨`,
         ),
       );
-    await warmupDoc.ref.set(
-      { status: "notification_sent" satisfies TicketStatus },
-      { merge: true },
-    );
-  }
+      await warmupDoc.ref.set(
+        { status: "notification_sent" satisfies TicketStatus },
+        { merge: true },
+      );
+    }
 
-  await Promise.all(smsTasks);
+    await Promise.all(smsTasks);
   });
 
 export const onTicketCreated = functions.firestore
@@ -123,8 +124,8 @@ export const onTicketCreated = functions.firestore
     if (!ticket?.phoneNumber || !ticket.ticketNumber) return;
 
     const msg = [
-      `You’re in line for Inner Garden photos! Ticket #${ticket.ticketNumber}.`,
-      "We’ll text when you’re close, when it’s your turn, and when photos are ready.",
+      `Ho ho ho! Your family is in Santa's cozy Inner Garden line. Ticket #${ticket.ticketNumber} 🎟️🎄`,
+      "We'll text when you're close, when it's your turn, and when your little one's photos are ready. Keep your kiddo nearby for Santa smiles! 🎅✨",
     ].join(" ");
 
     await sendSms(ticket.phoneNumber, msg);
@@ -149,8 +150,8 @@ export const onPhotosUploaded = functions.firestore
         : undefined);
 
     const body = link
-      ? `Your photos are ready! View them here: ${link}`
-      : `Your photos are ready! Check your gallery for ticket #${after.ticketNumber}.`;
+      ? `Yay! Your Santa photos are ready! Peek at your kiddo's magic here: ${link} 🎄✨`
+      : `Yay! Your Santa photos are ready! Check the gallery for Ticket #${after.ticketNumber} 🎄✨`;
 
     await sendSms(after.phoneNumber, body);
   });

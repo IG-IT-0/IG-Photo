@@ -15,6 +15,13 @@ import { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { db } from "@/lib/firebase";
 
+const PENDING_UPLOAD_STATUSES: QueueTicket["status"][] = [
+  "waiting",
+  "notification_sent",
+  "current",
+  "completed",
+];
+
 export default function AssistantPage() {
   const [tickets, setTickets] = useState<QueueTicket[]>([]);
   const [activeTicket, setActiveTicket] = useState<number | null>(null);
@@ -23,7 +30,7 @@ export default function AssistantPage() {
   useEffect(() => {
     const q = query(
       collection(db, "queue"),
-      where("status", "==", "completed"),
+      where("status", "in", PENDING_UPLOAD_STATUSES),
       orderBy("ticketNumber", "asc"),
     );
     const unsub = onSnapshot(q, (snap) => {
@@ -69,6 +76,8 @@ export default function AssistantPage() {
           <p className="text-sm text-ig-cream/70">
             Drop images onto the matching ticket. We upload to Firebase Storage,
             copy download URLs into Firestore, and mark the ticket as delivered.
+            You can upload even if the photographer hasn&apos;t tapped Mark as
+            Photographed yet.
           </p>
         </div>
         <Link
@@ -89,8 +98,9 @@ export default function AssistantPage() {
 
         {tickets.length === 0 ? (
           <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-sm text-ig-cream/70">
-            No completed tickets yet. They appear here once the photographer taps
-            “Mark as Photographed.”
+            No tickets waiting for upload yet. They appear here once families
+            join the line, and you can upload even if the photographer hasn&apos;t
+            marked them as photographed yet.
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
@@ -137,6 +147,8 @@ function TicketDrop({
     disabled: isUploading,
   });
 
+  const isMarkedPhotographed = ticket.status === "completed";
+
   return (
     <div
       {...getRootProps()}
@@ -161,13 +173,30 @@ function TicketDrop({
             Parent: {ticket.parentName} • {ticket.phoneNumber}
           </p>
         </div>
-        <div className="text-sm font-semibold text-ig-cream/80">
-          {isUploading ? "Uploading..." : "Drop images"}
+        <div className="flex flex-col items-end gap-1 text-sm font-semibold text-ig-cream/80">
+          <span
+            className={clsx(
+              "inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-semibold",
+              isMarkedPhotographed
+                ? "bg-ig-emerald/20 text-ig-cream"
+                : "bg-white/10 text-ig-cream/80",
+            )}
+          >
+            <span
+              className={clsx(
+                "h-2 w-2 rounded-full",
+                isMarkedPhotographed ? "bg-emerald-300" : "bg-ig-gold",
+              )}
+            />
+            {isMarkedPhotographed ? "Marked photographed" : "Not marked yet"}
+          </span>
+          <span>{isUploading ? "Uploading..." : "Drop images"}</span>
         </div>
       </div>
       <p className="mt-3 text-xs text-ig-cream/70">
         Files go to /YEAR/ticket_{ticket.ticketNumber}/ in Firebase Storage.
-        Marked as &ldquo;photos_uploaded&rdquo; once finished.
+        Uploading will still flip the ticket to &ldquo;photos_uploaded&rdquo;
+        even if it hasn&apos;t been marked yet.
       </p>
     </div>
   );

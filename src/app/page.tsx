@@ -48,6 +48,10 @@ function clearStoredTicket() {
   window.localStorage.removeItem(STORAGE_KEY);
 }
 
+function formatEta(date: Date) {
+  return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}
+
 function StatusBadge({ status }: { status?: QueueTicket["status"] }) {
   const copy = status ? statusCopy[status] ?? status : "Unknown";
   const styles =
@@ -74,6 +78,7 @@ export default function Home() {
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [initialEstimate, setInitialEstimate] = useState<number | null>(null);
 
   useEffect(() => {
     setStoredTicket(loadTicket());
@@ -105,6 +110,25 @@ export default function Home() {
     return () => unsubTicket();
   }, [storedTicket?.ticketNumber]);
 
+  useEffect(() => {
+    if (!storedTicket?.ticketNumber) {
+      setInitialEstimate(null);
+    }
+  }, [storedTicket?.ticketNumber]);
+
+  useEffect(() => {
+    if (!ticket || initialEstimate !== null) return;
+    if (ticket.estimatedMinutesAtSignup != null) {
+      setInitialEstimate(ticket.estimatedMinutesAtSignup);
+      return;
+    }
+    if (!settings) return;
+    const computed =
+      Math.max(ticket.ticketNumber - (settings.currentServingTicket ?? 0), 0) *
+      AVERAGE_MINUTES_PER_TICKET;
+    setInitialEstimate(computed);
+  }, [initialEstimate, settings, ticket]);
+
   const position = useMemo(() => {
     if (!ticket || !settings) return null;
     if (ticket.status === "completed" || ticket.status === "photos_uploaded") {
@@ -115,8 +139,25 @@ export default function Home() {
     return Math.max(raw, 0);
   }, [settings, ticket]);
 
-  const estimatedWait =
-    position && position > 0 ? position * AVERAGE_MINUTES_PER_TICKET : 0;
+  const estimatedWait = useMemo(() => {
+    if (ticket?.estimatedMinutesAtSignup != null) {
+      return ticket.estimatedMinutesAtSignup;
+    }
+    if (initialEstimate !== null) {
+      return initialEstimate;
+    }
+    if (position && position > 0) {
+      return position * AVERAGE_MINUTES_PER_TICKET;
+    }
+    return 0;
+  }, [initialEstimate, position, ticket?.estimatedMinutesAtSignup]);
+
+  const estimatedReadyTime =
+    ticket?.timestamp &&
+    estimatedWait &&
+    ticket?.status !== "photos_uploaded"
+      ? new Date(ticket.timestamp.toDate().getTime() + estimatedWait * 60 * 1000)
+      : null;
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -142,6 +183,7 @@ export default function Home() {
     clearStoredTicket();
     setStoredTicket(null);
     setTicket(null);
+    setInitialEstimate(null);
   };
 
   return (
@@ -289,12 +331,23 @@ export default function Home() {
               <p>Current serving: #{settings?.currentServingTicket ?? 0}</p>
               <p>
                 You are: #{storedTicket.ticketNumber}
-                {position && position > 0 ? ` (${position} away)` : ""}
+                {position && position > 0
+                  ? ` (${position} away)`
+                  : position === 0
+                    ? " (next up)"
+                    : ""}
               </p>
               <p>
-                Est. wait:{" "}
-                {estimatedWait > 0 ? `${estimatedWait} mins` : "You’re up soon"}
+                Est. wait when you joined:{" "}
+                {estimatedWait > 0
+                  ? `${estimatedWait} mins`
+                  : "We’re nearly ready"}
               </p>
+              {estimatedReadyTime && (
+                <p className="text-xs text-ig-cream/60">
+                  Rough turn around {formatEta(estimatedReadyTime)}
+                </p>
+              )}
             </div>
           </div>
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -321,6 +374,20 @@ export default function Home() {
           </div>
         </section>
       )}
+      <footer className="rounded-3xl bg-white/5 p-4 text-sm text-ig-cream/70 ring-1 ring-white/10">
+        <p>
+          We respect your family&apos;s privacy. Read our{" "}
+          <a
+            href="https://www.innergardenedu.com/privacy-policy"
+            className="text-ig-gold underline underline-offset-4"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Privacy Policy
+          </a>
+          .
+        </p>
+      </footer>
     </div>
   );
 }
