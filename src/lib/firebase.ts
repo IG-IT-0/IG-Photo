@@ -28,6 +28,10 @@ const db = initializeFirestore(app, {
   localCache: persistentLocalCache({
     tabManager: persistentMultipleTabManager(),
   }),
+  // Safari sometimes blocks Firestore's streaming connections; this enables a
+  // long-poll fallback so realtime updates still work there.
+  experimentalAutoDetectLongPolling: true,
+  useFetchStreams: false,
 });
 
 const storage = getStorage(app);
